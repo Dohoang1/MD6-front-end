@@ -116,8 +116,9 @@ function AddProduct() {
         <div className="add-product">
             <div className="add-product-header">
                 <h2>Thêm sản phẩm mới</h2>
-                <Link to="/" className="back-link">
+                <Link to="/" className="back-link tooltip">
                     <FaArrowLeft /> Quay lại
+                    <span className="tooltip-text">Quay về trang danh sách</span>
                 </Link>
             </div>
 
@@ -223,8 +224,9 @@ function AddProduct() {
                             ))}
                         </div>
                         
-                        <label className="upload-button">
+                        <label className="upload-button tooltip">
                             <FaImage /> Thêm ảnh
+                            <span className="tooltip-text">Chọn nhiều ảnh để tải lên</span>
                             <input
                                 type="file"
                                 multiple
@@ -238,11 +240,14 @@ function AddProduct() {
 
                 <button 
                     type="submit" 
-                    className={`save-button ${saving ? 'saving' : ''}`}
+                    className={`save-button ${saving ? 'saving' : ''} tooltip`}
                     disabled={saving}
                 >
                     <FaSave />
                     {saving ? 'Đang lưu...' : 'Lưu sản phẩm'}
+                    <span className="tooltip-text">
+                        {saving ? 'Đang xử lý...' : 'Lưu thông tin sản phẩm'}
+                    </span>
                 </button>
             </form>
         </div>

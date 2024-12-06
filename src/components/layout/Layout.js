@@ -19,7 +19,7 @@ function Layout({ children }) {
             <header className="header">
                 <div className="header-container">
                     <Link to="/" className="logo">
-                        <h1>E-Commerce</h1>
+                        <h1>UniTrade</h1>
                     </Link>
                     <div className="header-right">
                         <form onSubmit={handleSearch} className="search-form">
@@ -49,11 +49,11 @@ function Layout({ children }) {
                 <div className="footer-container">
                     <div className="footer-section">
                         <h3>Về chúng tôi</h3>
-                        <p>E-Commerce - Nền tảng mua sắm trực tuyến hàng đầu</p>
+                        <p>UniTrade - Nền tảng mua sắm trực tuyến hàng đầu</p>
                     </div>
                     <div className="footer-section">
                         <h3>Liên hệ</h3>
-                        <p>Email: contact@ecommerce.com</p>
+                        <p>Email: contact@unitrade.com</p>
                         <p>Điện thoại: (84) 123-456-789</p>
                     </div>
                     <div className="footer-section">
@@ -66,7 +66,7 @@ function Layout({ children }) {
                     </div>
                 </div>
                 <div className="footer-bottom">
-                    <p>&copy; 2024 E-Commerce. All rights reserved.</p>
+                    <p>&copy; 2024 UniTrade. All rights reserved.</p>
                 </div>
             </footer>
         </div>

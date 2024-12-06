@@ -170,3 +170,48 @@
     outline: none;
     border-color: #3498db;
 }
+
+/* Thêm styles cho tooltip */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 14px;
+  
+  /* Vị trí tooltip */
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  /* Hiệu ứng */
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* Mũi tên của tooltip */
+.tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* Hiển thị tooltip khi hover */
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}

@@ -58,6 +58,12 @@ function ProductList() {
         }
     };
 
+    const truncateText = (text, maxLength = 150) => {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.slice(0, maxLength) + '...';
+    };
+
     if (loading) {
         return <div className="loading">Đang tải...</div>;
     }
@@ -67,31 +73,41 @@ function ProductList() {
     }
 
     return (
-        <div className="product-list">
-            <h2 className="page-title">Danh sách sản phẩm</h2>
-            {searchTerm && (
-                <p className="search-results">
-                    Kết quả tìm kiếm cho "{searchTerm}": {products.length} sản phẩm
-                </p>
-            )}
-            <div className="products-grid">
-                {products.map(product => (
-                    <div key={product.id} className="product-card">
-                        <Link to={`/product/${product.id}`} className="product-link">
-                            <div className="product-image-container">
-                                <img 
-                                    src={`http://localhost:8080/uploads/${product.imageUrls[0]}`} 
-                                    alt={product.name}
-                                    onError={(e) => {
-                                        e.target.src = 'https://via.placeholder.com/300';
-                                    }}
-                                />
-                            </div>
+<div className="product-list">
+        <h2 className="page-title">Danh sách sản phẩm</h2>
+        {searchTerm && (
+            <p className="search-results">
+                Kết quả tìm kiếm cho "{searchTerm}": {products.length} sản phẩm
+            </p>
+        )}
+        <div className="products-grid">
+            {products.map(product => (
+                <div key={product.id} className="product-card">
+                    {/* Thay đổi phần này */}
+                    <Link 
+                        to={`/product/${product.id}`} 
+                        className="product-link tooltip" 
+                        data-tooltip={product.description}
+                    >
+                        <div className="product-image-container">
+                            <img 
+                                src={`http://localhost:8080/uploads/${product.imageUrls[0]}`} 
+                                alt={product.name}
+                                onError={(e) => {
+                                    e.target.src = 'https://via.placeholder.com/300';
+                                }}
+                            />
+                        </div>
+                    </Link>
+                    <div className="product-info">
+                        {/* Và thay đổi phần này */}
+                        <Link 
+                            to={`/product/${product.id}`} 
+                            className="product-name-link tooltip" 
+                            data-tooltip={product.description}
+                        >
+                            <h3>{product.name}</h3>
                         </Link>
-                        <div className="product-info">
-                            <Link to={`/product/${product.id}`} className="product-name-link">
-                                <h3>{product.name}</h3>
-                            </Link>
                             <span className="product-category">{product.category}</span>
                             <div className="product-status">
                                 {product.quantity > 0 ? (
