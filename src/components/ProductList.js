@@ -1,23 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { FaShoppingCart, FaEdit, FaTrash } from 'react-icons/fa';
 import './ProductList.css';
 
 function ProductList() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const searchParams = new URLSearchParams(location.search);
+    const searchTerm = searchParams.get('search') || '';
+
     useEffect(() => {
         fetchProducts();
-    }, []);
+    }, [searchTerm]);
 
     const fetchProducts = async () => {
         try {
             const response = await axios.get('http://localhost:8080/api/products');
-            setProducts(response.data);
+            let filteredProducts = response.data;
+            
+            // Sort by newest first (assuming products have a timestamp or ID that indicates order)
+            filteredProducts.sort((a, b) => b.id - a.id);
+            
+            // Apply search filter if search term exists
+            if (searchTerm) {
+                filteredProducts = filteredProducts.filter(product => 
+                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            
+            setProducts(filteredProducts);
             setLoading(false);
         } catch (err) {
             setError('Có lỗi xảy ra khi tải danh sách sản phẩm');
@@ -33,15 +51,29 @@ function ProductList() {
         if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
             try {
                 await axios.delete(`http://localhost:8080/api/products/${id}`);
-                fetchProducts(); // Refresh list after delete
+                fetchProducts();
             } catch (err) {
                 alert('Có lỗi xảy ra khi xóa sản phẩm');
             }
         }
     };
 
+    if (loading) {
+        return <div className="loading">Đang tải...</div>;
+    }
+
+    if (error) {
+        return <div className="error">{error}</div>;
+    }
+
     return (
         <div className="product-list">
+            <h2 className="page-title">Danh sách sản phẩm</h2>
+            {searchTerm && (
+                <p className="search-results">
+                    Kết quả tìm kiếm cho "{searchTerm}": {products.length} sản phẩm
+                </p>
+            )}
             <div className="products-grid">
                 {products.map(product => (
                     <div key={product.id} className="product-card">

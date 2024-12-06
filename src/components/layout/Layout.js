@@ -1,30 +1,50 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaSearch } from 'react-icons/fa';
 import './Layout.css';
 
 function Layout({ children }) {
+    const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchTerm.trim()) {
+            navigate(`/?search=${encodeURIComponent(searchTerm.trim())}`);
+        }
+    };
+
     return (
         <div className="layout">
-            {/* Header/Navbar */}
             <header className="header">
                 <div className="header-container">
                     <Link to="/" className="logo">
                         <h1>E-Commerce</h1>
                     </Link>
-                    <nav className="nav-links">
-                        <Link to="/" className="nav-link">Trang chủ</Link>
-                        <Link to="/products" className="nav-link">Sản phẩm</Link>
-                        <Link to="/add-product" className="nav-link">Thêm sản phẩm</Link>
-                    </nav>
+                    <div className="header-right">
+                        <form onSubmit={handleSearch} className="search-form">
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm sản phẩm..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="search-input"
+                            />
+                            <button type="submit" className="search-button">
+                                <FaSearch />
+                            </button>
+                        </form>
+                        <nav className="nav-links">
+                            <Link to="/add-product" className="nav-link">Thêm sản phẩm</Link>
+                        </nav>
+                    </div>
                 </div>
             </header>
 
-            {/* Main Content */}
             <main className="main-content">
                 {children}
             </main>
 
-            {/* Footer */}
             <footer className="footer">
                 <div className="footer-container">
                     <div className="footer-section">

@@ -18,6 +18,11 @@ function EditProduct() {
     const [newFiles, setNewFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
     
+    // Category states
+    const [categories, setCategories] = useState([]);
+    const [showCustomInput, setShowCustomInput] = useState(false);
+    const [customCategory, setCustomCategory] = useState('');
+    
     // UI states
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -25,6 +30,7 @@ function EditProduct() {
 
     useEffect(() => {
         fetchProduct();
+        fetchCategories();
     }, [id]);
 
     const fetchProduct = async () => {
@@ -32,7 +38,6 @@ function EditProduct() {
             const response = await axios.get(`http://localhost:8080/api/products/${id}`);
             const product = response.data;
             
-            // Set form data
             setName(product.name);
             setPrice(product.price);
             setQuantity(product.quantity);
@@ -47,11 +52,20 @@ function EditProduct() {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const response = await axios.get('http://localhost:8080/api/products');
+            const uniqueCategories = [...new Set(response.data.map(product => product.category))];
+            setCategories(uniqueCategories);
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+        }
+    };
+
     const handleFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
         setNewFiles(prevFiles => [...prevFiles, ...selectedFiles]);
 
-        // Create previews for new files
         const newPreviews = selectedFiles.map(file => ({
             url: URL.createObjectURL(file),
             isNew: true
@@ -68,6 +82,24 @@ function EditProduct() {
         setPreviews(prev => prev.filter((_, i) => i !== index));
     };
 
+    const handleCategoryChange = (e) => {
+        const value = e.target.value;
+        if (value === 'custom') {
+            setShowCustomInput(true);
+            setCategory('');
+        } else {
+            setShowCustomInput(false);
+            setCategory(value);
+            setCustomCategory('');
+        }
+    };
+
+    const handleCustomCategoryChange = (e) => {
+        const value = e.target.value;
+        setCustomCategory(value);
+        setCategory(value);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (saving) return;
@@ -76,36 +108,44 @@ function EditProduct() {
             setSaving(true);
             setError(null);
 
-            // Validation
-            if (!name || !price || !description || !category) {
-                throw new Error('Vui lòng điền đầy đủ thông tin sản phẩm');
-            }
-
             const formData = new FormData();
-            formData.append('name', name);
+            formData.append('name', name.trim());
             formData.append('price', price);
             formData.append('quantity', quantity);
-            formData.append('description', description);
-            formData.append('category', category);
+            formData.append('description', description.trim());
+            formData.append('category', category.trim());
             formData.append('existingImages', JSON.stringify(existingImages));
 
-            // Append new files
             newFiles.forEach(file => {
                 formData.append('files', file);
             });
 
-            await axios.put(`http://localhost:8080/api/products/${id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
+            await axios.put(
+                `http://localhost:8080/api/products/${id}`, 
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
                 }
-            });
+            );
 
             navigate(`/product/${id}`);
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.response?.data || 'Có lỗi xảy ra khi cập nhật sản phẩm');
             setSaving(false);
         }
     };
+
+    useEffect(() => {
+        return () => {
+            previews.forEach(preview => {
+                if (preview.isNew) {
+                    URL.revokeObjectURL(preview.url);
+                }
+            });
+        };
+    }, [previews]);
 
     if (loading) {
         return (
@@ -121,15 +161,11 @@ function EditProduct() {
             <div className="edit-product-header">
                 <h2>Chỉnh sửa sản phẩm</h2>
                 <Link to={`/product/${id}`} className="back-link">
-                    <FaArrowLeft /> <span>Quay lại</span>
+                    <FaArrowLeft /> Quay lại
                 </Link>
             </div>
 
-            {error && (
-                <div className="error-message">
-                    {error}
-                </div>
-            )}
+            {error && <div className="error-message">{error}</div>}
 
             <form onSubmit={handleSubmit} className="edit-form">
                 <div className="form-group">
@@ -140,6 +176,7 @@ function EditProduct() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Nhập tên sản phẩm"
+                        required
                     />
                 </div>
 
@@ -151,8 +188,8 @@ function EditProduct() {
                             id="price"
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
-                            placeholder="Nhập giá sản phẩm"
-                            min="0"
+                            placeholder="Nhập giá"
+                            required
                         />
                     </div>
 
@@ -164,20 +201,36 @@ function EditProduct() {
                             value={quantity}
                             onChange={(e) => setQuantity(e.target.value)}
                             placeholder="Nhập số lượng"
-                            min="0"
+                            required
                         />
                     </div>
                 </div>
 
                 <div className="form-group">
                     <label htmlFor="category">Danh mục:</label>
-                    <input
-                        type="text"
-                        id="category"
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        placeholder="Nhập danh mục"
-                    />
+                    <div className="category-input-group">
+                        <select
+                            value={showCustomInput ? 'custom' : category}
+                            onChange={handleCategoryChange}
+                            className="category-select"
+                        >
+                            <option value="">Chọn danh mục</option>
+                            {categories.map((cat, index) => (
+                                <option key={index} value={cat}>{cat}</option>
+                            ))}
+                            <option value="custom">+ Thêm danh mục mới</option>
+                        </select>
+                        
+                        {showCustomInput && (
+                            <input
+                                type="text"
+                                value={customCategory}
+                                onChange={handleCustomCategoryChange}
+                                placeholder="Nhập tên danh mục mới"
+                                className="custom-category-input"
+                            />
+                        )}
+                    </div>
                 </div>
 
                 <div className="form-group">
@@ -188,6 +241,7 @@ function EditProduct() {
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Nhập mô tả sản phẩm"
                         rows="5"
+                        required
                     />
                 </div>
 
@@ -245,16 +299,14 @@ function EditProduct() {
                     </div>
                 </div>
 
-                <div className="form-actions">
-                    <button 
-                        type="submit" 
-                        className={`save-button ${saving ? 'saving' : ''}`}
-                        disabled={saving}
-                    >
-                        <FaSave />
-                        <span>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
-                    </button>
-                </div>
+                <button 
+                    type="submit" 
+                    className={`save-button ${saving ? 'saving' : ''}`}
+                    disabled={saving}
+                >
+                    <FaSave />
+                    <span>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+                </button>
             </form>
         </div>
     );
