@@ -9,8 +9,12 @@ function Layout({ children }) {
 
     const handleSearch = (e) => {
         e.preventDefault();
+        console.log('Search submitted:', searchTerm);
         if (searchTerm.trim()) {
-            navigate(`/?search=${encodeURIComponent(searchTerm.trim())}`);
+            const currentSort = new URLSearchParams(window.location.search).get('sort') || 'newest';
+            const searchUrl = `/?search=${encodeURIComponent(searchTerm.trim())}&sort=${currentSort}`;
+            console.log('Navigating to:', searchUrl);
+            navigate(searchUrl);
         }
     };
 

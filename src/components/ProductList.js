@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { FaShoppingCart, FaEdit, FaTrash } from 'react-icons/fa';
 import './ProductList.css';
@@ -7,40 +7,79 @@ import './ProductList.css';
 function ProductList() {
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
+    
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+    const pageSize = 12;
 
-    const searchParams = new URLSearchParams(location.search);
+    const sortOption = searchParams.get('sort') || 'newest';
     const searchTerm = searchParams.get('search') || '';
 
-    useEffect(() => {
-        fetchProducts();
-    }, [searchTerm]);
+    const getSortParams = (option) => {
+        switch(option) {
+            case 'newest':
+                return 'id,desc';
+            case 'priceAsc':
+                return 'price,asc';
+            case 'priceDesc':
+                return 'price,desc';
+            default:
+                return 'id,desc';
+        }
+    };
 
     const fetchProducts = async () => {
         try {
-            const response = await axios.get('http://localhost:8080/api/products');
-            let filteredProducts = response.data;
+            const sortParam = getSortParams(sortOption);
+            let url = `http://localhost:8080/api/products/page?page=${currentPage}&size=${pageSize}&sort=${sortParam}`;
             
-            // Sort by newest first (assuming products have a timestamp or ID that indicates order)
-            filteredProducts.sort((a, b) => b.id - a.id);
-            
-            // Apply search filter if search term exists
             if (searchTerm) {
-                filteredProducts = filteredProducts.filter(product => 
-                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    product.category.toLowerCase().includes(searchTerm.toLowerCase())
-                );
+                url += `&search=${encodeURIComponent(searchTerm)}`;
             }
             
-            setProducts(filteredProducts);
+            console.log('Fetching products with URL:', url);
+            
+            const response = await axios.get(url);
+            console.log('API Response:', response.data);
+            
+            setProducts(response.data.content);
+            setTotalPages(response.data.totalPages);
+            setTotalElements(response.data.totalElements);
             setLoading(false);
         } catch (err) {
+            console.error('Error details:', err.response || err);
             setError('Có lỗi xảy ra khi tải danh sách sản phẩm');
             setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        console.log('URL changed:', location.search);
+        console.log('Current search params:', Object.fromEntries(searchParams));
+        console.log('Search term:', searchTerm);
+        console.log('Sort option:', sortOption);
+        fetchProducts();
+    }, [location.search]);
+
+    useEffect(() => {
+        console.log('Products updated:', products);
+    }, [products]);
+
+    const handleSortChange = (event) => {
+        const newSortOption = event.target.value;
+        setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            newParams.set('sort', newSortOption);
+            if (searchTerm) {
+                newParams.set('search', searchTerm);
+            }
+            return newParams;
+        });
     };
 
     const handleEdit = (id) => {
@@ -64,6 +103,10 @@ function ProductList() {
         return text.slice(0, maxLength) + '...';
     };
 
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+    };
+
     if (loading) {
         return <div className="loading">Đang tải...</div>;
     }
@@ -74,16 +117,32 @@ function ProductList() {
 
     return (
 <div className="product-list">
-        <h2 className="page-title">Danh sách sản phẩm</h2>
+        <div className="list-header">
+            <h2 className="page-title">
+                {searchTerm ? `Kết quả tìm kiếm cho "${searchTerm}"` : 'Danh sách sản phẩm'}
+            </h2>
+            <div className="sort-container">
+                <select 
+                    value={sortOption}
+                    onChange={handleSortChange}
+                    className="sort-select"
+                >
+                    <option value="newest">Mới nhất</option>
+                    <option value="priceAsc">Giá tăng dần</option>
+                    <option value="priceDesc">Giá giảm dần</option>
+                </select>
+            </div>
+        </div>
+
         {searchTerm && (
             <p className="search-results">
-                Kết quả tìm kiếm cho "{searchTerm}": {products.length} sản phẩm
+                Tìm thấy {totalElements} sản phẩm
             </p>
         )}
+
         <div className="products-grid">
             {products.map(product => (
                 <div key={product.id} className="product-card">
-                    {/* Thay đổi phần này */}
                     <Link 
                         to={`/product/${product.id}`} 
                         className="product-link tooltip" 
@@ -100,7 +159,6 @@ function ProductList() {
                         </div>
                     </Link>
                     <div className="product-info">
-                        {/* Và thay đổi phần này */}
                         <Link 
                             to={`/product/${product.id}`} 
                             className="product-name-link tooltip" 
@@ -148,6 +206,34 @@ function ProductList() {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            <div className="pagination">
+                <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className="pagination-button"
+                >
+                    Trang trước
+                </button>
+                
+                {[...Array(totalPages)].map((_, index) => (
+                    <button
+                        key={index}
+                        onClick={() => handlePageChange(index)}
+                        className={`pagination-button ${currentPage === index ? 'active' : ''}`}
+                    >
+                        {index + 1}
+                    </button>
+                ))}
+
+                <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages - 1}
+                    className="pagination-button"
+                >
+                    Trang sau
+                </button>
             </div>
         </div>
     );
